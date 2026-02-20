@@ -1,0 +1,54 @@
+<template>
+    <div class="about-page">
+        <header class="about-hero">
+            <p class="hero-eyebrow">Established 2024</p>
+            <h1 class="hero-title">Point & Pour</h1>
+            <p class="hero-subtitle">Premium spirits, local wines, and craft beers delivered to your door. Join the club for exclusive member pricing on every bottle.</p>
+        </header>
+
+        <div class="about-container">
+            <section class="about-section membership-section">
+                <h2 class="section-heading centered">Frequently Asked Questions</h2>
+                <div class="faq-list slds-m-top_large">
+                    <template for:each={faqs} for:item="faq">
+                        <div key={faq.id} class="faq-item">
+                            <button class="faq-question" onclick={handleFaqToggle} data-id={faq.id}>
+                                {faq.question}
+                                <span class="faq-chevron">
+                                    <template if:true={faq.isOpen}>▲</template>
+                                    <template if:false={faq.isOpen}>▼</template>
+                                </span>
+                            </button>
+                            <template if:true={faq.isOpen}>
+                                <div class="faq-answer">
+                                    <p>{faq.answer}</p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <section class="about-section section-with-image">
+                <div class="info-block">
+                    <h2 class="section-heading">Visit Our Store</h2>
+                    <div class="info-row">
+                        <span class="info-icon">📍</span>
+                        <div>
+                            <p class="info-title">Location</p>
+                            <p class="info-detail">123 High Street,<br/>Bendigo, VIC 3550</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="hours-card">
+                    <h3 class="hours-title">Opening Hours</h3>
+                    <div class="hours-table">
+                        <div class="hours-row"><span class="day">Mon - Thu</span><span class="time">10:00 AM - 8:00 PM</span></div>
+                        <div class="hours-row highlight"><span class="day">Fri - Sat</span><span class="time">10:00 AM - 10:00 PM</span></div>
+                        <div class="hours-row"><span class="day">Sunday</span><span class="time">11:00 AM - 6:00 PM</span></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</template>

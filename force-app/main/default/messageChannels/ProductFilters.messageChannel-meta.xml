@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningMessageChannel xmlns="http://soap.sforce.com/2006/04/metadata">
+    <masterLabel>ProductFilters</masterLabel>
+    <isExposed>true</isExposed>
+    <description>Handles category navigation, search, and cart updates.</description>
+    <lightningMessageFields>
+        <fieldName>category</fieldName>
+    </lightningMessageFields>
+    <lightningMessageFields>
+        <fieldName>cartCount</fieldName>
+    </lightningMessageFields>
+    <lightningMessageFields>
+        <fieldName>searchKey</fieldName>
+    </lightningMessageFields>
+    <lightningMessageFields>
+        <fieldName>subFamily</fieldName>
+    </lightningMessageFields>
+</LightningMessageChannel>

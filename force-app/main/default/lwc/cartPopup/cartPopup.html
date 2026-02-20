@@ -1,0 +1,48 @@
+<template>
+    <!-- Backdrop -->
+    <div class="popup-backdrop" onclick={handleClose}></div>
+
+    <!-- Drawer -->
+    <div class="cart-popup">
+        <div class="popup-header">
+            <div class="popup-title">
+                <span class="added-icon">✓</span>
+                <span>{lastAddedName} added to cart</span>
+            </div>
+            <button class="close-btn" onclick={handleClose}>✕</button>
+        </div>
+
+        <div class="popup-body">
+            <template if:true={hasItems}>
+                <div class="cart-item-list">
+                    <template for:each={cartItems} for:item="item">
+                        <div key={item.Id} class="popup-item">
+                            <div class="popup-item-img">
+                                <img if:true={item.Product__r.Product_Image_Field__c}
+                                     src={item.Product__r.Product_Image_Field__c}
+                                     alt={item.Product__r.Name}/>
+                                <img if:false={item.Product__r.Product_Image_Field__c}
+                                     src="https://via.placeholder.com/60x60?text=?"
+                                     alt="Product"/>
+                            </div>
+                            <div class="popup-item-info">
+                                <p class="popup-item-name">{item.Product__r.Name}</p>
+                                <p class="popup-item-qty">Qty: {item._qty}</p>
+                            </div>
+                            <div class="popup-item-price">{item._formattedTotal}</div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+
+        <div class="popup-footer">
+            <div class="popup-total-row">
+                <span class="popup-total-label">Cart Total ({cartCount} items)</span>
+                <span class="popup-total-value">{cartTotal}</span>
+            </div>
+            <button class="view-cart-btn" onclick={handleViewCart}>View Cart &amp; Checkout</button>
+            <button class="keep-shopping-btn" onclick={handleClose}>Continue Shopping</button>
+        </div>
+    </div>
+</template>

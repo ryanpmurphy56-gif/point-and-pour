@@ -1,0 +1,142 @@
+.dashboard {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.welcome-bar {
+    margin-bottom: 30px;
+}
+
+.welcome-text {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin: 0 0 4px;
+}
+
+.welcome-sub {
+    color: #666;
+    font-size: 15px;
+    margin: 0;
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e8e8e8;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 8px;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.stat-sub {
+    font-size: 13px;
+    color: #666;
+    margin: 4px 0 0;
+}
+
+.punch-section {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e8e8e8;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.punch-btn {
+    width: 220px;
+    padding: 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+}
+
+.punch-in {
+    background: #16a34a;
+    color: white;
+}
+
+.punch-in:hover { background: #15803d; }
+
+.punch-out {
+    background: #dc2626;
+    color: white;
+}
+
+.punch-out:hover { background: #b91c1c; }
+
+.punched-in-info {
+    margin-bottom: 16px;
+}
+
+.punched-label {
+    font-size: 14px;
+    color: #16a34a;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+
+.punched-time {
+    font-size: 20px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin: 0 0 16px;
+}
+
+.notifications {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e8e8e8;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 16px;
+}
+
+.notification-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+.note-icon { font-size: 18px; }
+.note-text { flex: 1; color: #333; }
+.note-time { font-size: 12px; color: #888; }

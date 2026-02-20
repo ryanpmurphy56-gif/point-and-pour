@@ -1,0 +1,56 @@
+<template>
+    <div class="dashboard">
+
+        <div class="welcome-bar">
+            <h1 class="welcome-text">Good {timeOfDay}, {userName} 👋</h1>
+            <p class="welcome-sub">Here's your overview for today.</p>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <p class="stat-label">Hours This Week</p>
+                <p class="stat-value">{hoursThisWeek}h</p>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Next Shift</p>
+                <p class="stat-value">{nextShiftDate}</p>
+                <p class="stat-sub">{nextShiftTime}</p>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Status</p>
+                <p class="stat-value">{currentStatus}</p>
+            </div>
+        </div>
+
+        <div class="punch-section">
+            <template if:false={isPunchedIn}>
+                <button class="punch-btn punch-in" onclick={handlePunchIn}>
+                    ⏱ PUNCH IN
+                </button>
+            </template>
+            <template if:true={isPunchedIn}>
+                <div class="punched-in-info">
+                    <p class="punched-label">Currently Clocked In</p>
+                    <p class="punched-time">Since {punchInTime}</p>
+                </div>
+                <button class="punch-btn punch-out" onclick={handlePunchOut}>
+                    ⏹ PUNCH OUT
+                </button>
+            </template>
+        </div>
+
+        <template if:true={hasNotifications}>
+            <div class="notifications">
+                <h3 class="section-title">Notifications</h3>
+                <template for:each={notifications} for:item="note">
+                    <div key={note.id} class="notification-item">
+                        <span class="note-icon">{note.icon}</span>
+                        <span class="note-text">{note.message}</span>
+                        <span class="note-time">{note.time}</span>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+    </div>
+</template>

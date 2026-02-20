@@ -1,0 +1,291 @@
+.about-page {
+    font-family: 'Georgia', serif;
+}
+
+/* HERO */
+.about-hero {
+    background: linear-gradient(135deg, #1a0828 0%, #3d0f2e 50%, #581d43 100%);
+    padding: 80px 5%;
+    text-align: center;
+    color: white;
+}
+
+.hero-eyebrow {
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 16px;
+}
+
+.hero-title {
+    font-size: 52px;
+    font-weight: 900;
+    margin: 0 0 20px;
+    letter-spacing: -1px;
+}
+
+.hero-subtitle {
+    font-size: 18px;
+    line-height: 1.7;
+    opacity: 0.85;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* CONTAINER */
+.about-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+}
+
+/* SECTIONS */
+.about-section {
+    padding: 64px 0;
+    border-bottom: 1px solid #f0e8f8;
+}
+
+.about-section:last-of-type { border-bottom: none; }
+
+.section-heading {
+    font-size: 32px;
+    font-weight: 900;
+    color: #1a0828;
+    margin: 0 0 20px;
+}
+
+.section-heading.centered { text-align: center; }
+
+.section-intro {
+    text-align: center;
+    font-size: 16px;
+    color: #666;
+    margin: 0 0 40px;
+}
+
+.section-with-image {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+    align-items: center;
+}
+
+.section-text p {
+    font-size: 16px;
+    color: #555;
+    line-height: 1.8;
+    margin-bottom: 16px;
+}
+
+/* STATS */
+.stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #581d43, #9d164d);
+    border-radius: 12px;
+    padding: 28px 20px;
+    text-align: center;
+    color: white;
+}
+
+.stat-number {
+    display: block;
+    font-size: 36px;
+    font-weight: 900;
+    margin-bottom: 6px;
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}
+
+/* MEMBERSHIP STEPS */
+.membership-section { background: #fdf9ff; border-radius: 16px; padding: 56px 48px; }
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 28px;
+}
+
+.step-card {
+    background: white;
+    border-radius: 12px;
+    padding: 28px;
+    text-align: center;
+    border: 1px solid #e8e0f0;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.step-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(88,29,67,0.1);
+}
+
+.step-icon { font-size: 40px; margin-bottom: 16px; }
+
+.step-card h3 { font-size: 17px; font-weight: 800; color: #1a0828; margin: 0 0 10px; }
+.step-card p { font-size: 14px; color: #666; line-height: 1.6; margin: 0; }
+
+/* VISIT / HOURS */
+.info-block { display: flex; flex-direction: column; gap: 20px; }
+
+.info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.info-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+.info-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: 700; margin: 0 0 4px; }
+.info-detail { font-size: 15px; color: #333; font-weight: 600; margin: 0; line-height: 1.5; }
+
+.hours-card {
+    background: #1a0828;
+    border-radius: 14px;
+    padding: 32px;
+    color: white;
+}
+
+.hours-title { font-size: 18px; font-weight: 700; margin: 0 0 20px; }
+
+.hours-table { display: flex; flex-direction: column; gap: 10px; }
+
+.hours-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-size: 14px;
+}
+
+.hours-row.highlight { background: rgba(157,22,77,0.2); border-radius: 6px; padding: 8px 12px; }
+
+.hours-row .day { color: rgba(255,255,255,0.7); }
+.hours-row .time { font-weight: 700; color: white; }
+
+/* FAQ */
+.faq-list { display: flex; flex-direction: column; gap: 2px; max-width: 760px; margin: 0 auto; }
+
+.faq-item { border-bottom: 1px solid #e8e0f0; }
+
+.faq-question {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 0;
+    background: none;
+    border: none;
+    color: #1a0828;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    gap: 16px;
+}
+
+.faq-question:hover { color: #581d43; background: none; }
+.faq-chevron { font-size: 12px; opacity: 0.5; flex-shrink: 0; }
+
+.faq-answer {
+    padding: 0 0 18px;
+}
+
+.faq-answer p {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* COMPLIANCE */
+.compliance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+}
+
+.compliance-card {
+    background: #f9f7fc;
+    border-radius: 12px;
+    padding: 28px;
+    border: 1px solid #e8e0f0;
+    border-top: 4px solid #581d43;
+}
+
+.compliance-icon { font-size: 32px; margin-bottom: 14px; }
+.compliance-card h3 { font-size: 16px; font-weight: 800; color: #1a0828; margin: 0 0 12px; }
+.compliance-card p { font-size: 13px; color: #555; line-height: 1.6; margin: 0 0 8px; }
+.compliance-link { font-size: 13px; color: #581d43; text-decoration: none; font-weight: 600; }
+.compliance-link:hover { text-decoration: underline; }
+
+/* CTA */
+.cta-section { padding: 60px 0 0; }
+
+.cta-card {
+    background: linear-gradient(135deg, #1a0828 0%, #581d43 100%);
+    border-radius: 16px;
+    padding: 56px;
+    text-align: center;
+    color: white;
+}
+
+.cta-title { font-size: 36px; font-weight: 900; margin: 0 0 12px; }
+.cta-sub { font-size: 16px; opacity: 0.8; margin: 0 0 32px; }
+
+.cta-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+.cta-primary {
+    padding: 16px 36px;
+    background: white;
+    color: #581d43;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    width: auto;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s;
+}
+
+.cta-primary:hover { opacity: 0.9; background: white; }
+
+.cta-secondary {
+    padding: 16px 36px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: auto;
+    text-transform: uppercase;
+    transition: background 0.2s;
+}
+
+.cta-secondary:hover { background: rgba(255,255,255,0.2); }
+
+@media (max-width: 768px) {
+    .hero-title { font-size: 36px; }
+    .section-with-image { grid-template-columns: 1fr; gap: 32px; }
+    .steps-grid { grid-template-columns: 1fr; }
+    .compliance-grid { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .membership-section { padding: 36px 24px; }
+    .cta-card { padding: 40px 24px; }
+    .cta-title { font-size: 28px; }
+}
