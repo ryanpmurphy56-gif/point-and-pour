@@ -12,8 +12,7 @@ public with sharing class EmployeePortalController {
 
     @AuraEnabled(cacheable=true)
     public static Boolean isManager() {
-        User u = [SELECT Profile.Name FROM User WHERE Id = :UserInfo.getUserId() LIMIT 1];
-        return u.Profile.Name.contains('Manager') || u.Profile.Name.contains('Admin');
+        return FeatureManagement.checkPermission('Manage_Roster');
     }
 
     @AuraEnabled(cacheable=true)
@@ -25,7 +24,7 @@ public with sharing class EmployeePortalController {
                    Date__c, Staff_Member__c, Staff_Member__r.Name
             FROM Roster_Shifts__c
             WHERE Staff_Member__c = :UserInfo.getUserId()
-            AND Start_Time__c >= :DateTime.now().addDays(-7)
+            AND Start_Time__c >= :DateTime.now().addDays(-30)
             ORDER BY Start_Time__c ASC
         ];
     }
@@ -47,11 +46,14 @@ public with sharing class EmployeePortalController {
 
     @AuraEnabled(cacheable=true)
     public static Decimal getHoursThisWeek() {
-        // Calculate start of current week (Monday)
         Date today = Date.today();
-        Integer dayOfWeek = Math.mod(today.toStartOfWeek().daysBetween(today), 7);
-        DateTime weekStart = DateTime.newInstance(today.toStartOfWeek(), Time.newInstance(0,0,0,0));
-        
+        Date sunday = today.toStartOfWeek();
+        Date monday = sunday.addDays(1);
+        if (today == sunday) {
+            monday = sunday.addDays(-6);
+        }
+        DateTime weekStart = DateTime.newInstance(monday, Time.newInstance(0, 0, 0, 0));
+
         AggregateResult[] results = [
             SELECT SUM(Shift_Duration_Hours__c) total
             FROM Roster_Shifts__c
@@ -77,27 +79,53 @@ public with sharing class EmployeePortalController {
 
     @AuraEnabled
     public static void punchIn(Id shiftId) {
-        Roster_Shifts__c shift = [
-            SELECT Id, Status__c, Actual_Start_Time__c
-            FROM Roster_Shifts__c WHERE Id = :shiftId LIMIT 1
-        ];
-        if (shift.Status__c == 'In Progress') {
-            throw new AuraHandledException('You are already punched in.');
+        try {
+            List<Roster_Shifts__c> shifts = [
+                SELECT Id, Status__c, Actual_Start_Time__c
+                FROM Roster_Shifts__c
+                WHERE Id = :shiftId
+                AND Staff_Member__c = :UserInfo.getUserId()
+                LIMIT 1
+            ];
+            if (shifts.isEmpty()) {
+                throw new AuraHandledException('Shift not found or does not belong to you.');
+            }
+            Roster_Shifts__c shift = shifts[0];
+            if (shift.Status__c == 'In Progress') {
+                throw new AuraHandledException('You are already punched in.');
+            }
+            shift.Actual_Start_Time__c = DateTime.now();
+            shift.Status__c = 'In Progress';
+            update shift;
+        } catch (AuraHandledException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuraHandledException('Failed to punch in: ' + e.getMessage());
         }
-        shift.Actual_Start_Time__c = DateTime.now();
-        shift.Status__c = 'In Progress';
-        update shift;
     }
 
     @AuraEnabled
     public static void punchOut(Id shiftId) {
-        Roster_Shifts__c shift = [
-            SELECT Id, Status__c, Actual_End_Time__c
-            FROM Roster_Shifts__c WHERE Id = :shiftId LIMIT 1
-        ];
-        shift.Actual_End_Time__c = DateTime.now();
-        shift.Status__c = 'Completed';
-        update shift;
+        try {
+            List<Roster_Shifts__c> shifts = [
+                SELECT Id, Status__c, Actual_End_Time__c, Actual_Start_Time__c
+                FROM Roster_Shifts__c
+                WHERE Id = :shiftId
+                AND Staff_Member__c = :UserInfo.getUserId()
+                LIMIT 1
+            ];
+            if (shifts.isEmpty()) {
+                throw new AuraHandledException('Shift not found or does not belong to you.');
+            }
+            Roster_Shifts__c shift = shifts[0];
+            shift.Actual_End_Time__c = DateTime.now();
+            shift.Status__c = 'Completed';
+            update shift;
+        } catch (AuraHandledException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuraHandledException('Failed to punch out: ' + e.getMessage());
+        }
     }
 
     @AuraEnabled(cacheable=true)
@@ -118,20 +146,46 @@ public with sharing class EmployeePortalController {
     @AuraEnabled
     public static Roster_Shifts__c createShift(Id employeeId, DateTime startTime,
                                                 DateTime endTime, String role) {
-        Roster_Shifts__c shift = new Roster_Shifts__c(
-            Staff_Member__c = employeeId,
-            Start_Time__c = startTime,
-            End_Time__c = endTime,
-            Role__c = role,
-            Status__c = 'Scheduled'
-        );
-        insert shift;
-        return shift;
+        try {
+            // Conflict detection
+            List<Roster_Shifts__c> conflicts = [
+                SELECT Id FROM Roster_Shifts__c
+                WHERE Staff_Member__c = :employeeId
+                AND Status__c != 'Cancelled'
+                AND (
+                    (Start_Time__c >= :startTime AND Start_Time__c < :endTime)
+                    OR (End_Time__c > :startTime AND End_Time__c <= :endTime)
+                    OR (Start_Time__c <= :startTime AND End_Time__c >= :endTime)
+                )
+                LIMIT 1
+            ];
+            if (!conflicts.isEmpty()) {
+                throw new AuraHandledException('This employee already has a shift during that time.');
+            }
+
+            Roster_Shifts__c shift = new Roster_Shifts__c(
+                Staff_Member__c = employeeId,
+                Start_Time__c = startTime,
+                End_Time__c = endTime,
+                Role__c = role,
+                Status__c = 'Scheduled'
+            );
+            insert shift;
+            return shift;
+        } catch (AuraHandledException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuraHandledException('Failed to create shift: ' + e.getMessage());
+        }
     }
 
     @AuraEnabled
     public static void deleteShift(Id shiftId) {
-        delete [SELECT Id FROM Roster_Shifts__c WHERE Id = :shiftId LIMIT 1];
+        try {
+            delete new Roster_Shifts__c(Id = shiftId);
+        } catch (Exception e) {
+            throw new AuraHandledException('Failed to delete shift: ' + e.getMessage());
+        }
     }
 
     @AuraEnabled(cacheable=true)
@@ -158,14 +212,18 @@ public with sharing class EmployeePortalController {
 
     @AuraEnabled
     public static void submitTimeOffRequest(Date startDate, Date endDate, String reason) {
-        Time_Off_Request__c request = new Time_Off_Request__c(
-            Employee__c = UserInfo.getUserId(),
-            Start_Date__c = startDate,
-            End_Date__c = endDate,
-            Reason__c = reason,
-            Status__c = 'Pending'
-        );
-        insert request;
+        try {
+            Time_Off_Request__c request = new Time_Off_Request__c(
+                Employee__c = UserInfo.getUserId(),
+                Start_Date__c = startDate,
+                End_Date__c = endDate,
+                Reason__c = reason,
+                Status__c = 'Pending'
+            );
+            insert request;
+        } catch (Exception e) {
+            throw new AuraHandledException('Failed to submit request: ' + e.getMessage());
+        }
     }
 
     @AuraEnabled(cacheable=true)
@@ -182,12 +240,30 @@ public with sharing class EmployeePortalController {
 
     @AuraEnabled
     public static void updateTimeOffRequest(Id requestId, String status, String notes) {
-        Time_Off_Request__c request = [
-            SELECT Id FROM Time_Off_Request__c WHERE Id = :requestId LIMIT 1
+        try {
+            Time_Off_Request__c request = new Time_Off_Request__c(
+                Id = requestId,
+                Status__c = status,
+                Manager_Notes__c = notes
+            );
+            update request;
+        } catch (Exception e) {
+            throw new AuraHandledException('Failed to update request: ' + e.getMessage());
+        }
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<Roster_Shifts__c> getUpcomingShifts() {
+        return [
+            SELECT Id, Name, Start_Time__c, End_Time__c,
+                   Role__c, Status__c, Shift_Duration_Hours__c
+            FROM Roster_Shifts__c
+            WHERE Staff_Member__c = :UserInfo.getUserId()
+            AND Start_Time__c >= :DateTime.now()
+            AND Status__c = 'Scheduled'
+            ORDER BY Start_Time__c ASC
+            LIMIT 3
         ];
-        request.Status__c = status;
-        request.Manager_Notes__c = notes;
-        update request;
     }
 
 }
