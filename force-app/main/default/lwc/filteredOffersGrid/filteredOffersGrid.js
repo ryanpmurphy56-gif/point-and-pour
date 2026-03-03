@@ -8,6 +8,9 @@ import addToCart from '@salesforce/apex/CartController.addToCart';
 import getCartItems from '@salesforce/apex/CartController.getCartItems';
 import getCartCount from '@salesforce/apex/CartController.getCartCount';
 
+//SESSION STUFF 
+
+import { getSessionUID } from 'c/sessionService';
 export default class OffersGrid extends NavigationMixin(LightningElement) {
     @track products = [];
     @track isLoading = true;
@@ -16,9 +19,15 @@ export default class OffersGrid extends NavigationMixin(LightningElement) {
     @track cartCount = 0;
     @track lastAddedProduct = null;
     @api selectedFamily = 'offers';
+    @track sessionUID='';  
 
     @wire(MessageContext)
     messageContext;
+
+    connectedCallback() {
+        this.sessionUID = getSessionUID(); // ✅ same UID as product grid
+        console.log('Session UID:', this.sessionUID);
+    }
 
     @wire(getProductsOnOffer)
     wiredProducts({ data, error }) {
@@ -50,38 +59,32 @@ export default class OffersGrid extends NavigationMixin(LightningElement) {
         return this.products && this.products.length > 0;
     }
 
-    // FIX: Now actually calls addToCart Apex and shows mini cart popup
     handleAddToCart(event) {
         event.stopPropagation();
         const productId = event.target.dataset.id;
         const product = this.products.find(p => p.Id === productId);
 
-        addToCart({ productId: productId })
+        addToCart({ productId: productId, uid: this.sessionUID })
             .then(() => {
                 this.lastAddedProduct = product;
-                // Load cart items for the popup
-                return getCartItems();
+                return getCartItems({ uid: this.sessionUID });
             })
             .then(cartData => {
                 const fmt = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
                 this.cartItems = cartData.map(item => ({
                     ...item,
-                    _qty: Number(item.Quantity__c),
+                    _qty: Number(item.Qty),
                     _formattedTotal: fmt.format(
-                        Number(item.Quantity__c) *
-                        Number(item.Product__r.Members_Price_Individual__c || item.Product__r.Price__c)
+                        Number(item.Qty) * Number(item.MemberPrice || item.RegularPrice || 0)
                     )
                 }));
                 this.showCartPopup = true;
-                return getCartCount();
+                return getCartCount(    { uid: this.sessionUID });
             })
             .then(count => {
                 this.cartCount = count;
                 publish(this.messageContext, PRODUCT_CHANNEL, { cartCount: count });
-                // Auto-close popup after 5 seconds
-                setTimeout(() => {
-                    this.showCartPopup = false;
-                }, 5000);
+                setTimeout(() => { this.showCartPopup = false; }, 5000);
             })
             .catch(error => {
                 this.dispatchEvent(new ShowToastEvent({

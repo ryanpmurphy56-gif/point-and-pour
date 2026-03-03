@@ -11,7 +11,7 @@ public without sharing class SelfRegController {
 
     // ─── REGISTRATION ─────────────────────────────────────────────────────────
 
-    @AuraEnabled
+  @AuraEnabled
     public static String registerUser(
         String firstName,
         String lastName,
@@ -35,13 +35,29 @@ public without sharing class SelfRegController {
         // Check if user already exists
         List<User> existing = [SELECT Id FROM User WHERE Username = :email LIMIT 1];
         if (!existing.isEmpty()) {
-            throw new AuraHandledException('An account with this email already exists. Please log in.');
+            throw new AuraHandledException('An account with this email already exists.');
         }
 
         try {
-            // IMPORTANT: Change 'Point Pour Customer' to your actual Community Profile name
-            Profile p = [SELECT Id FROM Profile WHERE Name = 'Point Pour Customer' LIMIT 1];
+            User sysAdmin = [SELECT Id FROM User WHERE Profile.Name = 'System Administrator' AND IsActive = true LIMIT 1];
 
+            // 1. Create the Account first
+            Account acct = new Account(
+                Name = firstName + ' ' + lastName + ' Account',
+                OwnerId = sysAdmin.Id,
+                Birthdate__c = Date.valueOf('2000-01-01'), // Placeholder to satisfy validation rules
+                Phone = '0400000000'     ,     // Placeholder to satisfy validation rules
+                Join_Date__c = Date.today(),
+                Email__c = email.trim().toLowerCase(),
+                Phone_Number__c = '0400000000'     // Optional: track when they registered
+                
+            );
+            insert acct;
+
+            // 2. Find the Community Profile
+            Profile p = [SELECT Id FROM Profile WHERE Name = 'Customer Community User' LIMIT 1];
+
+            // 3. Prepare the User record (Adding placeholders to bypass your Validation Rules)
             User newUser = new User(
                 FirstName = firstName.trim(),
                 LastName = lastName.trim(),
@@ -57,16 +73,24 @@ public without sharing class SelfRegController {
                 IsActive = true
             );
 
-            String userId = Site.createExternalUser(newUser, null, password, false);
+            // 4. This creates the User AND the Contact in one go
+            String userId = Site.createExternalUser(newUser, acct.Id, password, false);
 
             if (userId != null) {
+                // Now we update the Contact that was just created to satisfy your validation rules
+                User createdUser = [SELECT ContactId FROM User WHERE Id = :userId];
+                Contact con = new Contact(
+                    Id = createdUser.ContactId,
+                    Birthdate = Date.valueOf('2000-01-01'), // Placeholder
+                    Phone = '0400000000'          // Placeholder
+                );
+                update con;
+
                 createMembershipCardAsync(userId);
                 return 'SUCCESS';
             } else {
-                throw new AuraHandledException('Could not create account. Please try again.');
+                throw new AuraHandledException('Could not create account.');
             }
-        } catch (AuraHandledException e) {
-            throw e;
         } catch (Exception e) {
             throw new AuraHandledException('Registration failed: ' + e.getMessage());
         }

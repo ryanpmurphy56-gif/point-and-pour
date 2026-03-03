@@ -6,27 +6,32 @@ import getCartItems from '@salesforce/apex/CartController.getCartItems';
 import updateQuantity from '@salesforce/apex/CartController.updateQuantity';
 import removeFromCart from '@salesforce/apex/CartController.removeFromCart';
 
+//SESSION STUFF 
+import { getSessionUID } from 'c/sessionService';
+
 export default class Cart extends NavigationMixin(LightningElement) {
     @track cartItems = [];
     @track isLoading = true;
 
     @wire(MessageContext)
     messageContext;
+    sessionUID;
 
-    connectedCallback() {
-        this.loadCart();
-    }
+   connectedCallback() {
+    this.sessionUID = getSessionUID(); // ✅ same UID as product grid
+    console.log('Session UID:', this.sessionUID);
+    this.loadCart();
+}
 
     loadCart() {
         this.isLoading = true;
-        getCartItems()
+        getCartItems({ uid: this.sessionUID })
             .then(data => {
                 const fmt = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
                 this.cartItems = data.map(item => {
-                    // CartItemWrapper fields (flat, not nested under Product__r)
                     const reg = Number(item.RegularPrice);
-                    const mem = Number(item.MemberPrice);   // null if not a member
-                    const qty = Number(item.Quantity__c);
+                    const mem = Number(item.MemberPrice);
+                    const qty = Number(item.Qty);
                     const stock = Number(item.QuantityOnHand);
                     const isMember = item.IsMember;
 

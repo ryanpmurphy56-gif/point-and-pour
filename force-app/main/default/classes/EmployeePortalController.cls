@@ -1,4 +1,4 @@
-public with sharing class EmployeePortalController {
+public without sharing class EmployeePortalController {
 
     @AuraEnabled(cacheable=true)
     public static User getCurrentUser() {

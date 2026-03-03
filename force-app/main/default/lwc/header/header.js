@@ -3,12 +3,16 @@ import { NavigationMixin } from 'lightning/navigation';
 import LOGO_RESOURCE from '@salesforce/resourceUrl/pointnpourlogo';
 import { publish, subscribe, MessageContext } from 'lightning/messageService';
 import PRODUCT_CHANNEL from '@salesforce/messageChannel/ProductFilters__c';
+import { CurrentPageReference } from 'lightning/navigation';
+import isGuestUser from '@salesforce/user/isGuest';
 
 export default class Header extends NavigationMixin(LightningElement) {
     logoUrl = LOGO_RESOURCE;
 
     @track isModalOpen = false;
     @track cartItemsCount = 0;
+
+    isLoggedIn = !isGuestUser;
 
     @wire(MessageContext)
     messageContext;
@@ -31,7 +35,6 @@ export default class Header extends NavigationMixin(LightningElement) {
             : 'Cart';
     }
 
-    // FIX: Proper LWC handler instead of inline onerror JS
     handleLogoError(event) {
         event.target.style.display = 'none';
     }
@@ -42,6 +45,13 @@ export default class Header extends NavigationMixin(LightningElement) {
 
     closeModal() {
         this.isModalOpen = false;
+    }
+
+    handleLogin() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__webPage',
+            attributes: { url: '/login' }
+        });
     }
 
     handleSearchSubmit() {
@@ -78,13 +88,6 @@ export default class Header extends NavigationMixin(LightningElement) {
         this[NavigationMixin.Navigate]({
             type: 'standard__webPage',
             attributes: { url: '/cart' }
-        });
-    }
-
-    handleMembershipClick() {
-        this[NavigationMixin.Navigate]({
-            type: 'standard__webPage',
-            attributes: { url: '/membership' }
         });
     }
 }

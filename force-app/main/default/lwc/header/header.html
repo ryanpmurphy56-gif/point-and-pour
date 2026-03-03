@@ -1,7 +1,12 @@
 <template>
     <div class="header-container">
         <div class="utility-bar">
-            <button class="utility-btn" onclick={handleShowMemberCard}>Membership Card</button>
+            <template if:true={isLoggedIn}>
+                <button class="utility-btn" onclick={handleShowMemberCard}>Membership Card</button>
+            </template>
+            <template if:false={isLoggedIn}>
+                <button class="utility-btn" onclick={handleLogin}>Login</button>
+            </template>
             <button class="utility-btn cart-utility-btn" onclick={handleViewCart}>
                 🛒 {cartLabel}
                 <template if:true={cartBadgeVisible}>

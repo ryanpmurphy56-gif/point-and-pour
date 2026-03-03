@@ -8,6 +8,11 @@ import addToCart from '@salesforce/apex/CartController.addToCart';
 import getCartItems from '@salesforce/apex/CartController.getCartItems';
 import getCartCount from '@salesforce/apex/CartController.getCartCount';
 
+
+//SESSION STUFF 
+
+import { getSessionUID } from 'c/sessionService';
+
 export default class FilteredProductGrid extends NavigationMixin(LightningElement) {
     @api selectedFamily = '';
     @track products = [];
@@ -19,6 +24,8 @@ export default class FilteredProductGrid extends NavigationMixin(LightningElemen
     @track cartCount = 0;
     @track lastAddedProduct = null;
     _subscription = null;
+
+    @track sessionUID='';  
 
     @wire(MessageContext)
     messageContext;
@@ -32,7 +39,16 @@ export default class FilteredProductGrid extends NavigationMixin(LightningElemen
                 this.selectedSubFamily = message.subFamily;
             }
         });
+       this.sessionUID = getSessionUID();
+
+
     }
+
+    getCookie(name) {
+  const cookies = document.cookie.split('; ');
+  const found = cookies.find(c => c.startsWith(name + '='));
+  return found ? found.split('=')[1] : null;
+}
 
     @wire(getProductsByFamily, {
         family: '$selectedFamily',
@@ -69,23 +85,22 @@ export default class FilteredProductGrid extends NavigationMixin(LightningElemen
         const productId = event.target.dataset.id;
         const product = this.products.find(p => p.Id === productId);
 
-        addToCart({ productId: productId })
+        addToCart({ productId: productId, uid: this.sessionUID })
             .then(() => {
                 this.lastAddedProduct = product;
-                return getCartItems();
+                return getCartItems({ uid: this.sessionUID });
             })
             .then(cartData => {
                 const fmt = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
                 this.cartItems = cartData.map(item => ({
                     ...item,
-                    _qty: Number(item.Quantity__c),
+                    _qty: Number(item.Qty),
                     _formattedTotal: fmt.format(
-                        Number(item.Quantity__c) *
-                        Number(item.Product__r.Members_Price_Individual__c || item.Product__r.Price__c)
+                        Number(item.Qty) * Number(item.MemberPrice || item.RegularPrice || 0)
                     )
                 }));
                 this.showCartPopup = true;
-                return getCartCount();
+                return getCartCount(    { uid: this.sessionUID });
             })
             .then(count => {
                 this.cartCount = count;

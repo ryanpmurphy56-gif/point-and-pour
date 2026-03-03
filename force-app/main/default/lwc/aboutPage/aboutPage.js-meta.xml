@@ -5,7 +5,6 @@
     <masterLabel>About Page</masterLabel>
     <description>The Point and Pour story and FAQ page.</description>
     <targets>
-        <target>lightningCommunity__page</target>
-        <target>lightningCommunity__default</target>
+        <target>lightningCommunity__Default_One_Column</target>
     </targets>
 </LightningComponentBundle>

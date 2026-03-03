@@ -18,15 +18,15 @@
                     <template for:each={cartItems} for:item="item">
                         <div key={item.Id} class="popup-item">
                             <div class="popup-item-img">
-                                <img if:true={item.Product__r.Product_Image_Field__c}
-                                     src={item.Product__r.Product_Image_Field__c}
-                                     alt={item.Product__r.Name}/>
-                                <img if:false={item.Product__r.Product_Image_Field__c}
+                                <img if:true={item.ProductImage}
+                                     src={item.ProductImage}
+                                     alt={item.ProductName}/>
+                                <img if:false={item.ProductImage}
                                      src="https://via.placeholder.com/60x60?text=?"
                                      alt="Product"/>
                             </div>
                             <div class="popup-item-info">
-                                <p class="popup-item-name">{item.Product__r.Name}</p>
+                                <p class="popup-item-name">{item.ProductName}</p>
                                 <p class="popup-item-qty">Qty: {item._qty}</p>
                             </div>
                             <div class="popup-item-price">{item._formattedTotal}</div>

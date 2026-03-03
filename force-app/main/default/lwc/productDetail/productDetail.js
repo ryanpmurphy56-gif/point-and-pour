@@ -118,10 +118,9 @@ export default class ProductDetail extends NavigationMixin(LightningElement) {
                 const fmt = this.fmt;
                 this.cartItems = cartData.map(item => ({
                     ...item,
-                    _qty: Number(item.Quantity__c),
+                    _qty: Number(item.Qty),
                     _formattedTotal: fmt.format(
-                        Number(item.Quantity__c) *
-                        Number(item.MemberPrice || item.RegularPrice)
+                        Number(item.Qty) * Number(item.MemberPrice || item.RegularPrice || 0)
                     )
                 }));
                 this.showCartPopup = true;

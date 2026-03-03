@@ -1,4 +1,4 @@
-public with sharing class ProductGridController {
+public without sharing class ProductGridController {
 
     @AuraEnabled(cacheable=true)
     public static List<Product2> getProductsByFamily(String family, String subFamily, String searchKey) {
