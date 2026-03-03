@@ -63,3 +63,9 @@
     font-size: 14px;
     color: #ccc;
 }
+
+.nav-btn.active {
+    background: rgba(167,139,250,0.2);
+    color: white;
+    border-bottom: 2px solid #a78bfa;
+}

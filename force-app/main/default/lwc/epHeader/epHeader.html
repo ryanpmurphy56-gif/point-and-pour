@@ -4,14 +4,12 @@
             <span class="portal-title">⚡ Staff Portal</span>
         </div>
         <div class="header-nav">
-            <button class="nav-btn" data-tab="dashboard" onclick={handleNav}>Dashboard</button>
-            <button class="nav-btn" data-tab="shifts" onclick={handleNav}>My Shifts</button>
-            <button class="nav-btn" data-tab="schedule" onclick={handleNav}>Schedule</button>
-            <button class="nav-btn" data-tab="timeoff" onclick={handleNav}>Time Off</button>
+            <button class={dashClass} data-tab="dashboard" onclick={handleNav}>Dashboard</button>
+            <button class={shiftsClass} data-tab="shifts" onclick={handleNav}>My Shifts</button>
+            <button class={scheduleClass} data-tab="schedule" onclick={handleNav}>Schedule</button>
+            <button class={timeOffClass} data-tab="timeoff" onclick={handleNav}>Time Off</button>
             <template if:true={isManager}>
-                <button class="nav-btn manager-btn" data-tab="manager" onclick={handleNav}>
-                    Manager ▾
-                </button>
+                <button class={managerClass} data-tab="manager" onclick={handleNav}>Manager ▾</button>
             </template>
         </div>
         <div class="header-right">
