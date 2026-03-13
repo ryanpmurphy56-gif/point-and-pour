@@ -1,17 +1,6 @@
-/**
- * SelfRegController
- * Handles self-registration for Point & Pour Experience Cloud site.
- * Creates a Community User and a Members_Card__c record linked to their Account.
- *
- * SETUP REQUIRED:
- * 1. Change 'Point Pour Customer' below to your actual Community Profile name
- * 2. Ensure Members_Card__c has Account__c (Master-Detail to Account)
- */
 public without sharing class SelfRegController {
 
-    // ─── REGISTRATION ─────────────────────────────────────────────────────────
-
-  @AuraEnabled
+    @AuraEnabled
     public static String registerUser(
         String firstName,
         String lastName,
@@ -19,141 +8,167 @@ public without sharing class SelfRegController {
         String password,
         String confirmPassword
     ) {
-        if (String.isBlank(firstName) || String.isBlank(lastName) || String.isBlank(email)) {
+
+        // Basic validation
+        if(String.isBlank(firstName) || String.isBlank(lastName) || String.isBlank(email)){
             throw new AuraHandledException('Please fill in all required fields.');
         }
-        if (String.isBlank(password) || password.length() < 8) {
+
+        if(password == null || password.length() < 8){
             throw new AuraHandledException('Password must be at least 8 characters.');
         }
-        if (password != confirmPassword) {
+
+        if(password != confirmPassword){
             throw new AuraHandledException('Passwords do not match.');
         }
-        if (!isValidEmail(email)) {
-            throw new AuraHandledException('Please enter a valid email address.');
-        }
 
-        // Check if user already exists
-        List<User> existing = [SELECT Id FROM User WHERE Username = :email LIMIT 1];
-        if (!existing.isEmpty()) {
-            throw new AuraHandledException('An account with this email already exists.');
+        if(!isValidEmail(email)){
+            throw new AuraHandledException('Invalid email address.');
         }
 
         try {
-            User sysAdmin = [SELECT Id FROM User WHERE Profile.Name = 'System Administrator' AND IsActive = true LIMIT 1];
+            String cleanEmail = email.trim().toLowerCase();
 
-            // 1. Create the Account first
+            // Prevent duplicate users
+            List<User> existing = [
+                SELECT Id
+                FROM User
+                WHERE Username = :cleanEmail
+                LIMIT 1
+            ];
+            if(!existing.isEmpty()){
+                throw new AuraHandledException('An account with this email already exists.');
+            }
+
+            // Get Community Profile
+            Profile p = [
+                SELECT Id
+                FROM Profile
+                WHERE Name = 'Customer Community User'
+                LIMIT 1
+            ];
+
+            Id ownerId = UserInfo.getUserId();
+
+            // Create Account
             Account acct = new Account(
-                Name = firstName + ' ' + lastName + ' Account',
-                OwnerId = sysAdmin.Id,
-                Birthdate__c = Date.valueOf('2000-01-01'), // Placeholder to satisfy validation rules
-                Phone = '0400000000'     ,     // Placeholder to satisfy validation rules
+                Name = firstName + ' ' + lastName,
+                OwnerId = ownerId,
+                Birthdate__c = Date.valueOf('2000-01-01'),
                 Join_Date__c = Date.today(),
-                Email__c = email.trim().toLowerCase(),
-                Phone_Number__c = '0400000000'     // Optional: track when they registered
-                
+                Email__c = cleanEmail,
+                Phone_Number__c = '0400000000'
             );
             insert acct;
 
-            // 2. Find the Community Profile
-            Profile p = [SELECT Id FROM Profile WHERE Name = 'Customer Community User' LIMIT 1];
+            // Create Contact for the User
+            Contact c = new Contact(
+                FirstName = firstName,
+                LastName = lastName,
+                Email = cleanEmail,
+                AccountId = acct.Id
+            );
+            insert c;
 
-            // 3. Prepare the User record (Adding placeholders to bypass your Validation Rules)
+            // Create User
             User newUser = new User(
                 FirstName = firstName.trim(),
                 LastName = lastName.trim(),
-                Email = email.trim().toLowerCase(),
-                Username = email.trim().toLowerCase(),
-                Alias = (firstName.substring(0, 1) + lastName.substring(0, Math.min(7, lastName.length()))).toLowerCase(),
-                CommunityNickname = generateNickname(firstName, lastName),
+                Email = cleanEmail,
+                Username = cleanEmail,
+                Alias = (firstName.substring(0,1) + lastName.substring(0,Math.min(7,lastName.length()))).toLowerCase(),
+                CommunityNickname = generateNickname(firstName,lastName),
                 ProfileId = p.Id,
                 LocaleSidKey = 'en_AU',
                 LanguageLocaleKey = 'en_US',
                 TimeZoneSidKey = 'Australia/Sydney',
                 EmailEncodingKey = 'UTF-8',
-                IsActive = true
+                ContactId = c.Id
             );
 
-            // 4. This creates the User AND the Contact in one go
-            String userId = Site.createExternalUser(newUser, acct.Id, password, false);
+            String userId = Site.createExternalUser(newUser, acct.Id, password);
 
-            if (userId != null) {
-                // Now we update the Contact that was just created to satisfy your validation rules
-                User createdUser = [SELECT ContactId FROM User WHERE Id = :userId];
-                Contact con = new Contact(
-                    Id = createdUser.ContactId,
-                    Birthdate = Date.valueOf('2000-01-01'), // Placeholder
-                    Phone = '0400000000'          // Placeholder
-                );
-                update con;
-
-                createMembershipCardAsync(userId);
-                return 'SUCCESS';
-            } else {
-                throw new AuraHandledException('Could not create account.');
+            if(userId == null){
+                throw new AuraHandledException('Unable to create user.');
             }
-        } catch (Exception e) {
+
+            // Async membership card creation
+            createMembershipCardAsync(userId);
+
+            return 'SUCCESS';
+
+        } catch(Exception e) {
+            System.debug('REGISTRATION ERROR: ' + e.getMessage());
             throw new AuraHandledException('Registration failed: ' + e.getMessage());
         }
     }
 
-    // ─── CREATE MEMBERSHIP CARD ───────────────────────────────────────────────
-    // Uses @future to avoid mixed DML error (can't do User + SObject in same transaction)
-    // Barcode__c and Memeber_number__c are formula fields - Salesforce generates them automatically
-    // We just need to create the record with the Account link and Name
-
+    // FUTURE method prevents mixed DML errors
     @future
-    private static void createMembershipCardAsync(String userId) {
+    private static void createMembershipCardAsync(String userId){
         try {
-            // Get the Account associated with this Community User
-            User u = [SELECT Id, AccountId, FirstName, LastName FROM User WHERE Id = :userId LIMIT 1];
+            User u = [
+                SELECT Id, AccountId, ContactId, FirstName, LastName
+                FROM User
+                WHERE Id = :userId
+                LIMIT 1
+            ];
 
-            if (u.AccountId == null) {
-                System.debug('No Account found for user ' + userId + ' - membership card not created');
+            if(u.AccountId == null || u.ContactId == null){
                 return;
             }
 
             Members_Card__c card = new Members_Card__c(
                 Account__c = u.AccountId,
+                Contact__c = u.ContactId,
                 Name = u.FirstName + ' ' + u.LastName + ' Membership',
                 Start_Date__c = Date.today(),
                 Expiry_Date__c = Date.today().addYears(1)
             );
+
             insert card;
 
-        } catch (Exception e) {
-            System.debug('Error creating membership card: ' + e.getMessage());
+        } catch(Exception e) {
+            System.debug('Membership card creation failed: ' + e.getMessage());
         }
     }
 
-    // ─── LOGIN ────────────────────────────────────────────────────────────────
-
     @AuraEnabled
-    public static String loginUser(String email, String password) {
-        if (String.isBlank(email) || String.isBlank(password)) {
-            throw new AuraHandledException('Please enter your email and password.');
+    public static String loginUser(String email, String password){
+        if(String.isBlank(email) || String.isBlank(password)){
+            throw new AuraHandledException('Please enter email and password.');
         }
+
         try {
-            ApexPages.PageReference startUrl = Site.login(email.trim().toLowerCase(), password, '/');
-            if (startUrl != null) {
+            ApexPages.PageReference startUrl = Site.login(
+                email.trim().toLowerCase(),
+                password,
+                '/'
+            );
+
+            if(startUrl != null){
                 return startUrl.getUrl();
             }
-            throw new AuraHandledException('Invalid email or password. Please try again.');
-        } catch (AuraHandledException e) {
-            throw e;
-        } catch (Exception e) {
+
+            throw new AuraHandledException('Invalid login details.');
+
+        } catch(Exception e) {
             throw new AuraHandledException('Login failed: ' + e.getMessage());
         }
     }
 
-    // ─── HELPERS ──────────────────────────────────────────────────────────────
-
-    private static String generateNickname(String firstName, String lastName) {
+    private static String generateNickname(String firstName, String lastName){
         String base = (firstName + lastName).replaceAll('[^a-zA-Z0-9]', '').toLowerCase();
-        if (base.length() > 35) base = base.substring(0, 35);
-        return base + String.valueOf(Math.abs(Crypto.getRandomInteger())).substring(0, 4);
+        if(base.length() > 30){
+            base = base.substring(0,30);
+        }
+        return base + String.valueOf(Math.abs(Crypto.getRandomInteger())).substring(0,4);
     }
 
-    private static Boolean isValidEmail(String email) {
-        return Pattern.matches('^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$', email);
+    private static Boolean isValidEmail(String email){
+        return Pattern.matches(
+            '^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$',
+            email
+        );
     }
 }

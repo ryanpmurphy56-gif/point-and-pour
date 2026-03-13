@@ -10,15 +10,6 @@
         </c-cart-popup>
     </template>
 
-    <!-- Category Buttons -->
-    <div class="categories">
-        <button onclick={handleFamilyChange} value="Beer">Beer</button>
-        <button onclick={handleFamilyChange} value="Wine">Wine</button>
-        <button onclick={handleFamilyChange} value="Spirits">Spirits</button>
-        <button onclick={handleFamilyChange} value="RTD">RTD</button>
-        <button onclick={handleFamilyChange} value="Offers">Offers</button>
-    </div>
-
     <!-- Empty State -->
     <template if:false={hasProducts}>
         <div class="empty-state">

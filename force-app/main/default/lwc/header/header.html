@@ -17,11 +17,13 @@
 
         <div class="main-header">
             <div class="brand">
-                <img src={logoUrl}
-                     alt="Point and Pour"
-                     class="logo-img"
-                     onerror={handleLogoError}/>
-                <span class="brand-text">POINT &amp; POUR</span>
+                <button class="logo-btn" onclick={handleLogoClick}>
+                    <img src={logoUrl}
+                         alt="Point and Pour"
+                         class="logo-img"
+                         onerror={handleLogoError}/>
+                    <span class="brand-text">POINT &amp; POUR</span>
+                </button>
             </div>
 
             <div class="search-box">

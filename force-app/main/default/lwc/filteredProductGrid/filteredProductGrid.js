@@ -7,11 +7,42 @@ import getProductsByFamily from '@salesforce/apex/ProductGridController.getProdu
 import addToCart from '@salesforce/apex/CartController.addToCart';
 import getCartItems from '@salesforce/apex/CartController.getCartItems';
 import getCartCount from '@salesforce/apex/CartController.getCartCount';
-
-
-//SESSION STUFF 
-
 import { getSessionUID } from 'c/sessionService';
+
+function getPricingMeta(p, fmt) {
+    const family = (p.Family || '').toLowerCase();
+    const has = v => { const n = Number(v); return Number.isFinite(n) && n > 0; };
+    const f   = v => fmt.format(Number(v));
+
+    let formattedRegular = '', formattedMember = '';
+    let showOfferRibbon = false, showMemberPrice = false;
+
+    if (family === 'beer') {
+        if (has(p.Price_6_Pack_New__c)) {
+            formattedRegular = f(p.Price_6_Pack_New__c);
+            if (has(p.Members_Price_6_Pack__c) && Number(p.Members_Price_6_Pack__c) < Number(p.Price_6_Pack_New__c)) {
+                formattedMember = f(p.Members_Price_6_Pack__c); showOfferRibbon = true; showMemberPrice = true;
+            }
+        } else if (has(p.Price_Slab_of_24_new__c)) {
+            formattedRegular = f(p.Price_Slab_of_24_new__c);
+            if (has(p.Members_Price_Slab_of_24__c) && Number(p.Members_Price_Slab_of_24__c) < Number(p.Price_Slab_of_24_new__c)) {
+                formattedMember = f(p.Members_Price_Slab_of_24__c); showOfferRibbon = true; showMemberPrice = true;
+            }
+        } else if (has(p.Price__c)) {
+            formattedRegular = f(p.Price__c);
+            if (has(p.Members_Price_Individual__c) && Number(p.Members_Price_Individual__c) < Number(p.Price__c)) {
+                formattedMember = f(p.Members_Price_Individual__c); showOfferRibbon = true; showMemberPrice = true;
+            }
+        }
+    } else {
+        if (has(p.Price__c)) formattedRegular = f(p.Price__c);
+        if (has(p.Members_Price_Individual__c) && Number(p.Members_Price_Individual__c) < Number(p.Price__c)) {
+            formattedMember = f(p.Members_Price_Individual__c); showOfferRibbon = true; showMemberPrice = true;
+        }
+    }
+
+    return { formattedRegular, formattedMember, _showOfferRibbon: showOfferRibbon, _showMemberPrice: showMemberPrice };
+}
 
 export default class FilteredProductGrid extends NavigationMixin(LightningElement) {
     @api selectedFamily = '';
@@ -24,31 +55,17 @@ export default class FilteredProductGrid extends NavigationMixin(LightningElemen
     @track cartCount = 0;
     @track lastAddedProduct = null;
     _subscription = null;
+    sessionUID;
 
-    @track sessionUID='';  
-
-    @wire(MessageContext)
-    messageContext;
+    @wire(MessageContext) messageContext;
 
     connectedCallback() {
+        this.sessionUID = getSessionUID();
         this._subscription = subscribe(this.messageContext, PRODUCT_CHANNEL, (message) => {
-            if (message.searchKey !== undefined) {
-                this.searchKey = message.searchKey;
-            }
-            if (message.subFamily !== undefined) {
-                this.selectedSubFamily = message.subFamily;
-            }
+            if (message.searchKey !== undefined) this.searchKey = message.searchKey;
+            if (message.subFamily !== undefined) this.selectedSubFamily = message.subFamily;
         });
-       this.sessionUID = getSessionUID();
-
-
     }
-
-    getCookie(name) {
-  const cookies = document.cookie.split('; ');
-  const found = cookies.find(c => c.startsWith(name + '='));
-  return found ? found.split('=')[1] : null;
-}
 
     @wire(getProductsByFamily, {
         family: '$selectedFamily',
@@ -58,49 +75,28 @@ export default class FilteredProductGrid extends NavigationMixin(LightningElemen
     wiredProducts({ data, error }) {
         if (data) {
             const fmt = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
-            this.products = data.map(p => {
-                const reg = Number(p.Price__c);
-                const mem = Number(p.Members_Price_Individual__c);
-                const hasReg = Number.isFinite(reg) && reg > 0;
-                const hasMem = Number.isFinite(mem) && mem > 0;
-                return {
-                    ...p,
-                    formattedRegular: hasReg ? fmt.format(reg) : '',
-                    formattedMember: hasMem ? fmt.format(mem) : '',
-                    _showMemberPrice: hasMem && (!hasReg || mem !== reg),
-                    _showOfferRibbon: hasReg && hasMem && mem < reg
-                };
-            });
+            this.products = data.map(p => ({ ...p, ...getPricingMeta(p, fmt) }));
         } else if (error) {
             console.error(error);
         }
     }
 
-    get hasProducts() {
-        return this.products && this.products.length > 0;
-    }
+    get hasProducts() { return this.products && this.products.length > 0; }
 
     handleAddToCart = (event) => {
         event.stopPropagation();
         const productId = event.target.dataset.id;
-        const product = this.products.find(p => p.Id === productId);
+        const product   = this.products.find(p => p.Id === productId);
 
-        addToCart({ productId: productId, uid: this.sessionUID })
+        addToCart({ productId, uid: this.sessionUID, selectedFormat: 'single' })
             .then(() => {
                 this.lastAddedProduct = product;
                 return getCartItems({ uid: this.sessionUID });
             })
             .then(cartData => {
-                const fmt = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
-                this.cartItems = cartData.map(item => ({
-                    ...item,
-                    _qty: Number(item.Qty),
-                    _formattedTotal: fmt.format(
-                        Number(item.Qty) * Number(item.MemberPrice || item.RegularPrice || 0)
-                    )
-                }));
+                this.cartItems = cartData;
                 this.showCartPopup = true;
-                return getCartCount(    { uid: this.sessionUID });
+                return getCartCount({ uid: this.sessionUID });
             })
             .then(count => {
                 this.cartCount = count;
@@ -120,15 +116,11 @@ export default class FilteredProductGrid extends NavigationMixin(LightningElemen
         const productId = event.currentTarget.dataset.id;
         this[NavigationMixin.Navigate]({
             type: 'standard__webPage',
-            attributes: {
-                url: '/product-detail?productId=' + productId
-            }
+            attributes: { url: '/product-detail?productId=' + productId }
         });
     };
 
-    handleClosePopup() {
-        this.showCartPopup = false;
-    }
+    handleClosePopup() { this.showCartPopup = false; }
 
     handleViewCart() {
         this.showCartPopup = false;

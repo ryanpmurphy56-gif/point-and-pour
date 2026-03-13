@@ -3,7 +3,6 @@ import { NavigationMixin } from 'lightning/navigation';
 import LOGO_RESOURCE from '@salesforce/resourceUrl/pointnpourlogo';
 import { publish, subscribe, MessageContext } from 'lightning/messageService';
 import PRODUCT_CHANNEL from '@salesforce/messageChannel/ProductFilters__c';
-import { CurrentPageReference } from 'lightning/navigation';
 import isGuestUser from '@salesforce/user/isGuest';
 
 export default class Header extends NavigationMixin(LightningElement) {
@@ -25,27 +24,22 @@ export default class Header extends NavigationMixin(LightningElement) {
         });
     }
 
-    get cartBadgeVisible() {
-        return this.cartItemsCount > 0;
-    }
-
+    get cartBadgeVisible() { return this.cartItemsCount > 0; }
     get cartLabel() {
-        return this.cartItemsCount > 0
-            ? 'Cart (' + this.cartItemsCount + ')'
-            : 'Cart';
+        return this.cartItemsCount > 0 ? 'Cart (' + this.cartItemsCount + ')' : 'Cart';
     }
 
-    handleLogoError(event) {
-        event.target.style.display = 'none';
+    handleLogoClick() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__webPage',
+            attributes: { url: '/home' }
+        });
     }
 
-    handleShowMemberCard() {
-        this.isModalOpen = true;
-    }
+    handleLogoError(event) { event.target.style.display = 'none'; }
 
-    closeModal() {
-        this.isModalOpen = false;
-    }
+    handleShowMemberCard() { this.isModalOpen = true; }
+    closeModal() { this.isModalOpen = false; }
 
     handleLogin() {
         this[NavigationMixin.Navigate]({
@@ -58,29 +52,19 @@ export default class Header extends NavigationMixin(LightningElement) {
         const searchInput = this.refs.searchInput;
         const val = searchInput ? searchInput.value.trim() : '';
         if (val) {
-            this[NavigationMixin.Navigate]({
-                type: 'standard__webPage',
-                attributes: {
-                    url: '/search?searchKey=' + encodeURIComponent(val)
-                }
-            });
             publish(this.messageContext, PRODUCT_CHANNEL, { searchKey: val });
         }
     }
 
     handleSearchKeyUp(event) {
-        if (event.key === 'Enter') {
-            this.handleSearchSubmit();
-        }
+        if (event.key === 'Enter') this.handleSearchSubmit();
     }
 
     handleFamilyChange(event) {
         const family = event.target.dataset.page;
         this[NavigationMixin.Navigate]({
             type: 'comm__namedPage',
-            attributes: {
-                name: family,
-            }
+            attributes: { name: family }
         });
     }
 

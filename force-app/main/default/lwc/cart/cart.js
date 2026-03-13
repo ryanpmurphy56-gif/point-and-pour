@@ -5,9 +5,27 @@ import PRODUCT_CHANNEL from '@salesforce/messageChannel/ProductFilters__c';
 import getCartItems from '@salesforce/apex/CartController.getCartItems';
 import updateQuantity from '@salesforce/apex/CartController.updateQuantity';
 import removeFromCart from '@salesforce/apex/CartController.removeFromCart';
-
-//SESSION STUFF 
 import { getSessionUID } from 'c/sessionService';
+
+function resolveActivePrice(item) {
+    const family = (item.ProductFamily || '').toLowerCase();
+    const has = v => { const n = Number(v); return Number.isFinite(n) && n > 0; };
+    const isMember = item.IsMember;
+
+    if (family === 'beer') {
+        if (isMember) {
+            if (has(item.MemberSixPackPrice)) return Number(item.MemberSixPackPrice);
+            if (has(item.MemberSlabPrice))    return Number(item.MemberSlabPrice);
+            if (has(item.MemberPrice))        return Number(item.MemberPrice);
+        }
+        if (has(item.SixPackPrice)) return Number(item.SixPackPrice);
+        if (has(item.SlabPrice))    return Number(item.SlabPrice);
+        return Number(item.RegularPrice) || 0;
+    }
+
+    if (isMember && has(item.MemberPrice)) return Number(item.MemberPrice);
+    return Number(item.RegularPrice) || 0;
+}
 
 export default class Cart extends NavigationMixin(LightningElement) {
     @track cartItems = [];
@@ -15,13 +33,13 @@ export default class Cart extends NavigationMixin(LightningElement) {
 
     @wire(MessageContext)
     messageContext;
+
     sessionUID;
 
-   connectedCallback() {
-    this.sessionUID = getSessionUID(); // ✅ same UID as product grid
-    console.log('Session UID:', this.sessionUID);
-    this.loadCart();
-}
+    connectedCallback() {
+        this.sessionUID = getSessionUID();
+        this.loadCart();
+    }
 
     loadCart() {
         this.isLoading = true;
@@ -29,93 +47,70 @@ export default class Cart extends NavigationMixin(LightningElement) {
             .then(data => {
                 const fmt = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
                 this.cartItems = data.map(item => {
-                    const reg = Number(item.RegularPrice);
-                    const mem = Number(item.MemberPrice);
-                    const qty = Number(item.Qty);
-                    const stock = Number(item.QuantityOnHand);
-                    const isMember = item.IsMember;
-
-                    const hasReg = Number.isFinite(reg) && reg > 0;
-                    const hasMem = isMember && Number.isFinite(mem) && mem > 0;
-                    const showMember = hasMem && mem !== reg;
-                    const activePrice = showMember ? mem : reg;
-                    const lineTotal = activePrice * qty;
-                    const savings = showMember ? (reg - mem) * qty : 0;
+                    const activePrice = resolveActivePrice(item);
+                    const qty         = Number(item.Quantity) || 0;
+                    const stock       = Number(item.QuantityOnHand);
+                    const lineTotal   = activePrice * qty;
+                    const fullReg     = Number(item.RegularPrice) || 0;
+                    const savings     = item.IsMember && activePrice < fullReg
+                        ? (fullReg - activePrice) * qty : 0;
 
                     return {
                         ...item,
-                        formattedRegular: hasReg ? fmt.format(reg) : '',
-                        formattedMember: hasMem ? fmt.format(mem) : '',
-                        formattedSavings: savings > 0 ? fmt.format(savings) : '',
-                        formattedLineTotal: fmt.format(lineTotal),
-                        _lineTotal: lineTotal,
-                        _savings: savings,
                         _qty: qty,
-                        _showMemberPrice: showMember,
-                        _isLowStock: stock > 0 && stock <= 5,
-                        _isOutOfStock: stock === 0
+                        formattedActivePrice: activePrice ? fmt.format(activePrice) : '',
+                        formattedLineTotal:   fmt.format(lineTotal),
+                        formattedSavings:     savings > 0 ? fmt.format(savings) : '',
+                        _lineTotal:           lineTotal,
+                        _savings:             savings,
+                        _isLowStock:          stock > 0 && stock <= 5,
+                        _isOutOfStock:        stock === 0
                     };
                 });
                 this.isLoading = false;
                 this.publishCartCount();
             })
             .catch(error => {
-                console.error('Error loading cart:', error);
+                console.error('Cart load error:', error);
                 this.isLoading = false;
             });
     }
 
-    get hasItems() {
-        return this.cartItems && this.cartItems.length > 0;
-    }
+    get hasItems()   { return this.cartItems && this.cartItems.length > 0; }
 
-    get subtotal() {
-        return this.cartItems.reduce((sum, item) => sum + item._lineTotal, 0);
-    }
-
-    get totalSavings() {
-        return this.cartItems.reduce((sum, item) => sum + item._savings, 0);
-    }
-
-    get total() {
-        return this.subtotal;
-    }
-
-    get hasMemberSavings() {
-        return this.totalSavings > 0;
-    }
+    get subtotal()   { return this.cartItems.reduce((sum, i) => sum + i._lineTotal, 0); }
+    get totalSavings() { return this.cartItems.reduce((sum, i) => sum + i._savings, 0); }
+    get hasMemberSavings() { return this.totalSavings > 0; }
 
     get formattedSubtotal() {
         return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(this.subtotal);
     }
-
     get formattedTotalSavings() {
         return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(this.totalSavings);
     }
-
     get formattedTotal() {
-        return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(this.total);
+        return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(this.subtotal);
     }
 
     handleIncrease(event) {
         const itemId = event.target.dataset.id;
-        const item = this.cartItems.find(i => i.Id === itemId);
-        if (item) {
-            updateQuantity({ cartItemId: itemId, newQuantity: item._qty + 1 })
-                .then(() => this.loadCart())
-                .catch(error => console.error(error));
-        }
+        const item   = this.cartItems.find(i => i.Id === itemId);
+        if (!item) return;
+        updateQuantity({ cartItemId: itemId, newQuantity: item._qty + 1 })
+            .then(() => this.loadCart())
+            .catch(err => console.error(err));
     }
 
     handleDecrease(event) {
         const itemId = event.target.dataset.id;
-        const item = this.cartItems.find(i => i.Id === itemId);
-        if (item && item._qty > 1) {
+        const item   = this.cartItems.find(i => i.Id === itemId);
+        if (!item) return;
+        if (item._qty <= 1) {
+            this.handleRemove(event);
+        } else {
             updateQuantity({ cartItemId: itemId, newQuantity: item._qty - 1 })
                 .then(() => this.loadCart())
-                .catch(error => console.error(error));
-        } else if (item && item._qty === 1) {
-            this.handleRemove(event);
+                .catch(err => console.error(err));
         }
     }
 
@@ -123,18 +118,18 @@ export default class Cart extends NavigationMixin(LightningElement) {
         const itemId = event.target.dataset.id;
         removeFromCart({ cartItemId: itemId })
             .then(() => this.loadCart())
-            .catch(error => console.error(error));
+            .catch(err => console.error(err));
     }
 
     publishCartCount() {
-        const count = this.cartItems.reduce((sum, item) => sum + item._qty, 0);
+        const count = this.cartItems.reduce((sum, i) => sum + i._qty, 0);
         publish(this.messageContext, PRODUCT_CHANNEL, { cartCount: count });
     }
 
     handleContinueShopping() {
         this[NavigationMixin.Navigate]({
-            type: 'comm__namedPage',
-            attributes: { name: 'Home' }
+            type: 'standard__webPage',
+            attributes: { url: '/home' }
         });
     }
 

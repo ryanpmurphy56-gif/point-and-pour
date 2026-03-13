@@ -188,3 +188,32 @@
     font-size: 0.8rem;
     border-bottom: 1px solid #eee;
 }
+.logo-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: auto;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.logo-btn:hover { opacity: 0.85; }
+.logo-btn:focus { outline: none; box-shadow: none; }
+.logo-btn:active { background: none; }
+.logo-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: auto;
+}
+
+.logo-btn:hover { opacity: 0.85; }

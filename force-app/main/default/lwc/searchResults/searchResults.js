@@ -7,6 +7,77 @@ import getProductsByFamily from '@salesforce/apex/ProductGridController.getProdu
 import addToCart from '@salesforce/apex/CartController.addToCart';
 import getCartCount from '@salesforce/apex/CartController.getCartCount';
 
+// ─── Pricing helper ───────────────────────────────────────────────────────────
+function getPricingMeta(p, fmt) {
+    const family = (p.Family || '').toLowerCase();
+    const has = v => { const n = Number(v); return Number.isFinite(n) && n > 0; };
+    const f   = v => fmt.format(Number(v));
+
+    let primaryLabel = 'Price', primaryFormatted = '';
+    let secondaryLabel = '', secondaryFormatted = '';
+    let showOfferRibbon = false;
+
+    if (family === 'beer') {
+        if (has(p.Six_Pack_Price__c)) {
+            primaryLabel     = '6 Pack';
+            primaryFormatted = f(p.Six_Pack_Price__c);
+            if (has(p.Slab_Price__c)) {
+                secondaryLabel     = 'Slab';
+                secondaryFormatted = f(p.Slab_Price__c);
+            } else if (has(p.Members_Price_Six_Pack__c)) {
+                secondaryLabel     = '✦ Member 6 Pack';
+                secondaryFormatted = f(p.Members_Price_Six_Pack__c);
+                showOfferRibbon    = Number(p.Members_Price_Six_Pack__c) < Number(p.Six_Pack_Price__c);
+            }
+        } else if (has(p.Slab_Price__c)) {
+            primaryLabel     = 'Slab';
+            primaryFormatted = f(p.Slab_Price__c);
+            if (has(p.Members_Price_Slab__c)) {
+                secondaryLabel     = '✦ Member Slab';
+                secondaryFormatted = f(p.Members_Price_Slab__c);
+                showOfferRibbon    = Number(p.Members_Price_Slab__c) < Number(p.Slab_Price__c);
+            }
+        } else if (has(p.Price__c)) {
+            primaryLabel     = 'Price';
+            primaryFormatted = f(p.Price__c);
+            if (has(p.Members_Price_Individual__c)) {
+                secondaryLabel     = '✦ Member Price';
+                secondaryFormatted = f(p.Members_Price_Individual__c);
+                showOfferRibbon    = Number(p.Members_Price_Individual__c) < Number(p.Price__c);
+            }
+        }
+    } else if (family === 'wine') {
+        if (has(p.Price__c)) {
+            primaryLabel     = 'Per Bottle';
+            primaryFormatted = f(p.Price__c);
+        }
+        if (has(p.Six_Pack_Price__c)) {
+            secondaryLabel     = '6 Bottles';
+            secondaryFormatted = f(p.Six_Pack_Price__c);
+        } else if (has(p.Members_Price_Individual__c)) {
+            secondaryLabel     = '✦ Member Price';
+            secondaryFormatted = f(p.Members_Price_Individual__c);
+            showOfferRibbon    = Number(p.Members_Price_Individual__c) < Number(p.Price__c);
+        }
+    } else {
+        if (has(p.Price__c)) {
+            primaryLabel     = 'Price';
+            primaryFormatted = f(p.Price__c);
+        }
+        if (has(p.Members_Price_Individual__c) &&
+            Number(p.Members_Price_Individual__c) < Number(p.Price__c)) {
+            secondaryLabel     = '✦ Member Price';
+            secondaryFormatted = f(p.Members_Price_Individual__c);
+            showOfferRibbon    = true;
+        }
+    }
+
+    return { primaryPriceLabel: primaryLabel, primaryPriceFormatted: primaryFormatted,
+             secondaryPriceLabel: secondaryLabel, secondaryPriceFormatted: secondaryFormatted,
+             _showSecondaryPrice: !!secondaryFormatted, _showOfferRibbon: showOfferRibbon };
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default class SearchResults extends NavigationMixin(LightningElement) {
     @track products = [];
     @track searchKey = '';
@@ -21,43 +92,19 @@ export default class SearchResults extends NavigationMixin(LightningElement) {
         }
     }
 
-    @wire(getProductsByFamily, {
-        family: '',
-        subFamily: '',
-        searchKey: '$searchKey'
-    })
+    @wire(getProductsByFamily, { family: '', subFamily: '', searchKey: '$searchKey' })
     wiredProducts({ data, error }) {
         if (data) {
             const fmt = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
-            this.products = data.map(p => {
-                const reg = Number(p.Price__c);
-                const mem = Number(p.Members_Price_Individual__c);
-                const hasReg = Number.isFinite(reg) && reg > 0;
-                const hasMem = Number.isFinite(mem) && mem > 0;
-                return {
-                    ...p,
-                    formattedRegular: hasReg ? fmt.format(reg) : '',
-                    formattedMember: hasMem ? fmt.format(mem) : '',
-                    _showMemberPrice: hasMem && (!hasReg || mem !== reg),
-                    _showOfferRibbon: hasReg && hasMem && mem < reg
-                };
-            });
+            this.products = data.map(p => ({ ...p, ...getPricingMeta(p, fmt) }));
         } else if (error) {
             console.error('Search error:', error);
         }
     }
 
-    get hasProducts() {
-        return this.products && this.products.length > 0;
-    }
-
-    get noResults() {
-        return this.searchKey && this.products && this.products.length === 0;
-    }
-
-    get resultCount() {
-        return this.products ? this.products.length : 0;
-    }
+    get hasProducts() { return this.products && this.products.length > 0; }
+    get noResults()   { return this.searchKey && this.products && this.products.length === 0; }
+    get resultCount() { return this.products ? this.products.length : 0; }
 
     handleAddToCart(event) {
         event.stopPropagation();
@@ -86,9 +133,7 @@ export default class SearchResults extends NavigationMixin(LightningElement) {
         const productId = event.currentTarget.dataset.id;
         this[NavigationMixin.Navigate]({
             type: 'standard__webPage',
-            attributes: {
-                url: '/product-detail?productId=' + productId
-            }
+            attributes: { url: '/product-detail?productId=' + productId }
         });
     }
 }

@@ -33,11 +33,19 @@ public without sharing class CartController {
         Boolean memberStatus = isMember();
 
         List<Cart_Item__c> items = [
-            SELECT Id, Product__c, Product__r.Name, Product__r.Price__c,
+            SELECT Id, Product__c,
+                   Product__r.Name,
+                   Product__r.Family,
+                   Product__r.Price__c,
                    Product__r.Members_Price_Individual__c,
+                   Product__r.Price_6_Pack_New__c,
+                   Product__r.Price_Slab_of_24_new__c,
+                   Product__r.Members_Price_6_Pack__c,
+                   Product__r.Members_Price_Slab_of_24__c,
                    Product__r.Product_Image_Field__c,
                    Product__r.Quantity_on_Hand__c,
-                   Quantity__c, Line_Total__c
+                   Quantity__c,
+                   Selected_Format__c
             FROM Cart_Item__c
             WHERE Cart__c = :cart.Id
             ORDER BY CreatedDate ASC
@@ -46,30 +54,37 @@ public without sharing class CartController {
         List<CartItemWrapper> wrapped = new List<CartItemWrapper>();
         for (Cart_Item__c item : items) {
             CartItemWrapper w = new CartItemWrapper();
-            w.Id = item.Id;
-            w.ProductId = item.Product__c;
-            w.Qty = item.Quantity__c;
-            w.LineTotal = item.Line_Total__c;
-            w.ProductName = item.Product__r.Name;
-            w.ProductImage = item.Product__r.Product_Image_Field__c;
-            w.QuantityOnHand = item.Product__r.Quantity_on_Hand__c;
-            w.RegularPrice = item.Product__r.Price__c;
-            w.MemberPrice = memberStatus ? item.Product__r.Members_Price_Individual__c : null;
-            w.IsMember = memberStatus;
+            w.Id              = item.Id;
+            w.ProductId       = item.Product__c;
+            w.Quantity        = item.Quantity__c;
+            w.SelectedFormat  = item.Selected_Format__c;
+            w.ProductName     = item.Product__r.Name;
+            w.ProductImage    = item.Product__r.Product_Image_Field__c;
+            w.QuantityOnHand  = item.Product__r.Quantity_on_Hand__c;
+            w.ProductFamily   = item.Product__r.Family;
+            w.RegularPrice    = item.Product__r.Price__c;
+            w.SixPackPrice    = item.Product__r.Price_6_Pack_New__c;
+            w.SlabPrice       = item.Product__r.Price_Slab_of_24_new__c;
+            w.MemberPrice     = memberStatus ? item.Product__r.Members_Price_Individual__c : null;
+            w.MemberSixPackPrice = memberStatus ? item.Product__r.Members_Price_6_Pack__c : null;
+            w.MemberSlabPrice    = memberStatus ? item.Product__r.Members_Price_Slab_of_24__c : null;
+            w.IsMember        = memberStatus;
             wrapped.add(w);
         }
         return wrapped;
     }
 
     @AuraEnabled
-    public static void addToCart(Id productId,String uid) {
+    public static void addToCart(Id productId, String uid, String selectedFormat) {
         Cart__c cart = getOrCreateCart(uid);
         Product2 product = [
             SELECT Id, Quantity_on_Hand__c FROM Product2 WHERE Id = :productId
         ];
         List<Cart_Item__c> existing = [
             SELECT Id, Quantity__c FROM Cart_Item__c
-            WHERE Cart__c = :cart.Id AND Product__c = :productId
+            WHERE Cart__c = :cart.Id
+            AND Product__c = :productId
+            AND Selected_Format__c = :selectedFormat
             LIMIT 1
         ];
         if (!existing.isEmpty()) {
@@ -79,7 +94,6 @@ public without sharing class CartController {
                 throw new AuraHandledException('Sorry, not enough stock available.');
             }
             item.Quantity__c = newQty;
-
             update item;
         } else {
             if (product.Quantity_on_Hand__c != null && product.Quantity_on_Hand__c < 1) {
@@ -88,7 +102,8 @@ public without sharing class CartController {
             insert new Cart_Item__c(
                 Cart__c = cart.Id,
                 Product__c = productId,
-                Quantity__c = 1
+                Quantity__c = 1,
+                Selected_Format__c = selectedFormat
             );
         }
     }
@@ -129,15 +144,20 @@ public without sharing class CartController {
     }
 
     public class CartItemWrapper {
-        @AuraEnabled public String Id;
-        @AuraEnabled public String ProductId;
-        @AuraEnabled public Decimal Qty;
-        @AuraEnabled public Decimal LineTotal;
-        @AuraEnabled public String ProductName;
-        @AuraEnabled public String ProductImage;
+        @AuraEnabled public String  Id;
+        @AuraEnabled public String  ProductId;
+        @AuraEnabled public Decimal Quantity;
+        @AuraEnabled public String  SelectedFormat;
+        @AuraEnabled public String  ProductName;
+        @AuraEnabled public String  ProductImage;
         @AuraEnabled public Decimal QuantityOnHand;
+        @AuraEnabled public String  ProductFamily;
         @AuraEnabled public Decimal RegularPrice;
+        @AuraEnabled public Decimal SixPackPrice;
+        @AuraEnabled public Decimal SlabPrice;
         @AuraEnabled public Decimal MemberPrice;
+        @AuraEnabled public Decimal MemberSixPackPrice;
+        @AuraEnabled public Decimal MemberSlabPrice;
         @AuraEnabled public Boolean IsMember;
     }
 }

@@ -15,7 +15,7 @@
         <div class="popup-body">
             <template if:true={hasItems}>
                 <div class="cart-item-list">
-                    <template for:each={cartItems} for:item="item">
+                    <template for:each={enrichedItems} for:item="item">
                         <div key={item.Id} class="popup-item">
                             <div class="popup-item-img">
                                 <img if:true={item.ProductImage}
@@ -27,7 +27,7 @@
                             </div>
                             <div class="popup-item-info">
                                 <p class="popup-item-name">{item.ProductName}</p>
-                                <p class="popup-item-qty">Qty: {item._qty}</p>
+                                <p class="popup-item-qty">Qty: {item._displayQty}</p>
                             </div>
                             <div class="popup-item-price">{item._formattedTotal}</div>
                         </div>
