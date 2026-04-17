@@ -1,0 +1,92 @@
+<template>
+    <div class="cart-container">
+        <h2 class="cart-title">Your Cart</h2>
+
+        <template if:true={isLoading}>
+            <div class="loading-state">
+                <lightning-spinner alternative-text="Loading cart..." size="medium"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+            <template if:true={hasItems}>
+                <div class="cart-items">
+                    <template for:each={cartItems} for:item="item">
+                        <div key={item.Id} class="cart-item">
+
+                            <div class="item-image">
+                                <img if:true={item.Product__r.Product_Image_Field__c}
+                                     src={item.Product__r.Product_Image_Field__c}
+                                     alt={item.Product__r.Name}/>
+                                <img if:false={item.Product__r.Product_Image_Field__c}
+                                     src="https://via.placeholder.com/100x100?text=No+Image"
+                                     alt="Placeholder"/>
+                            </div>
+
+                            <div class="item-details">
+                                <h3 class="item-name">{item.Product__r.Name}</h3>
+                                <div class="item-pricing">
+                                    <span class="regular-price">{item.formattedRegular}</span>
+                                    <template if:true={item._showMemberPrice}>
+                                        <span class="member-price">{item.formattedMember}</span>
+                                        <span class="savings">You save {item.formattedSavings}</span>
+                                    </template>
+                                </div>
+                                <template if:true={item._isLowStock}>
+                                    <p class="stock-warning">⚠️ Only {item.Product__r.Quantity_on_Hand__c} left in stock</p>
+                                </template>
+                                <template if:true={item._isOutOfStock}>
+                                    <p class="stock-warning out">❌ Out of stock</p>
+                                </template>
+                            </div>
+
+                            <div class="item-quantity">
+                                <button class="qty-btn" data-id={item.Id} onclick={handleDecrease}>−</button>
+                                <!-- FIX: Use _qty (pre-converted number) not raw Quantity__c -->
+                                <span class="qty-value">{item._qty}</span>
+                                <button class="qty-btn" data-id={item.Id} onclick={handleIncrease}>+</button>
+                            </div>
+
+                            <div class="item-total">
+                                <span>{item.formattedLineTotal}</span>
+                            </div>
+
+                            <button class="remove-btn" data-id={item.Id} onclick={handleRemove}>✕</button>
+
+                        </div>
+                    </template>
+                </div>
+
+                <div class="cart-summary">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span>{formattedSubtotal}</span>
+                    </div>
+                    <template if:true={hasMemberSavings}>
+                        <div class="summary-row savings-row">
+                            <span>Member Savings</span>
+                            <span class="savings">−{formattedTotalSavings}</span>
+                        </div>
+                    </template>
+                    <div class="summary-row total-row">
+                        <span>Total</span>
+                        <span class="total">{formattedTotal}</span>
+                    </div>
+                    <!-- FIX: Added checkout button and continue shopping link -->
+                    <button class="checkout-btn" onclick={handleCheckout}>Proceed to Checkout</button>
+                    <button class="continue-btn" onclick={handleContinueShopping}>← Continue Shopping</button>
+                </div>
+            </template>
+
+            <template if:false={hasItems}>
+                <div class="empty-cart">
+                    <div class="empty-icon">🛒</div>
+                    <p class="empty-title">Your cart is empty</p>
+                    <p class="empty-sub">Add some drinks to get started!</p>
+                    <button onclick={handleContinueShopping}>Browse Products</button>
+                </div>
+            </template>
+        </template>
+
+    </div>
+</template>

@@ -1,0 +1,183 @@
+<template>
+    <div class="about-page">
+
+        <!-- Hero -->
+        <div class="about-hero">
+            <div class="hero-content">
+                <p class="hero-eyebrow">Est. 2024 · Melbourne, VIC</p>
+                <h1 class="hero-title">About Point &amp; Pour</h1>
+                <p class="hero-subtitle">Your local bottle shop, reimagined. Expert curation, member pricing, and the best range of beers, wines and spirits in Melbourne.</p>
+            </div>
+        </div>
+
+        <div class="about-container">
+
+            <!-- Our Story -->
+            <section class="about-section">
+                <div class="section-with-image">
+                    <div class="section-text">
+                        <h2 class="section-heading">Our Story</h2>
+                        <p>Point &amp; Pour was founded with a simple belief: great drinks should be accessible to everyone. We built our membership program so our regulars — the people who really love what they drink — get rewarded with pricing that reflects their loyalty.</p>
+                        <p>We stock over 500 products across beer, wine, spirits, and RTD. Whether you're after a cold six-pack for Friday night or a rare single malt for a special occasion, our team can help.</p>
+                    </div>
+                    <div class="section-visual">
+                        <div class="stat-grid">
+                            <div class="stat-card">
+                                <span class="stat-number">500+</span>
+                                <span class="stat-label">Products</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-number">FREE</span>
+                                <span class="stat-label">Membership</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-number">10%+</span>
+                                <span class="stat-label">Member Savings</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-number">7</span>
+                                <span class="stat-label">Days a Week</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Membership Explained -->
+            <section class="about-section membership-section">
+                <h2 class="section-heading centered">How Membership Works</h2>
+                <p class="section-intro">Becoming a Point &amp; Pour member is completely free and takes less than 2 minutes.</p>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-icon">📝</div>
+                        <h3>1. Register Online</h3>
+                        <p>Create your account in under 2 minutes. We just need your name and email — no credit card required.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-icon">🎫</div>
+                        <h3>2. Get Your Card</h3>
+                        <p>A digital membership card with your unique QR code is automatically generated and available in your profile.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-icon">💰</div>
+                        <h3>3. Save Every Time</h3>
+                        <p>Shop online at member prices, or scan your QR code in-store to access your member pricing at the register.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Visit Us -->
+            <section class="about-section">
+                <div class="section-with-image">
+                    <div class="section-text">
+                        <h2 class="section-heading">Visit the Store</h2>
+                        <div class="info-block">
+                            <div class="info-row">
+                                <span class="info-icon">📍</span>
+                                <div>
+                                    <p class="info-title">Address</p>
+                                    <p class="info-detail">123 Main Street<br/>Melbourne VIC 3000</p>
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-icon">📞</span>
+                                <div>
+                                    <p class="info-title">Phone</p>
+                                    <p class="info-detail">(03) 9000 0000</p>
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-icon">✉️</span>
+                                <div>
+                                    <p class="info-title">Email</p>
+                                    <p class="info-detail">hello@pointnpour.com.au</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-visual">
+                        <div class="hours-card">
+                            <h3 class="hours-title">⏰ Opening Hours</h3>
+                            <div class="hours-table">
+                                <div class="hours-row">
+                                    <span class="day">Mon – Thu</span><span class="time">9:00am – 9:00pm</span>
+                                </div>
+                                <div class="hours-row">
+                                    <span class="day">Friday</span><span class="time">9:00am – 10:00pm</span>
+                                </div>
+                                <div class="hours-row highlight">
+                                    <span class="day">Saturday</span><span class="time">9:00am – 10:00pm</span>
+                                </div>
+                                <div class="hours-row">
+                                    <span class="day">Sunday</span><span class="time">10:00am – 8:00pm</span>
+                                </div>
+                                <div class="hours-row">
+                                    <span class="day">Public Holidays</span><span class="time">10:00am – 6:00pm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FAQ -->
+            <section class="about-section">
+                <h2 class="section-heading centered">Frequently Asked Questions</h2>
+                <div class="faq-list">
+                    <template for:each={faqs} for:item="faq">
+                        <div key={faq.id} class="faq-item">
+                            <button class="faq-question" onclick={handleFaqToggle} data-id={faq.id}>
+                                <span>{faq.question}</span>
+                                <span class="faq-chevron">{faq.isOpen ? '▲' : '▼'}</span>
+                            </button>
+                            <template if:true={faq.isOpen}>
+                                <div class="faq-answer">
+                                    <p>{faq.answer}</p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Compliance / Legal -->
+            <section class="about-section compliance-section">
+                <h2 class="section-heading centered">Licencing &amp; Compliance</h2>
+                <div class="compliance-grid">
+                    <div class="compliance-card">
+                        <div class="compliance-icon">🪪</div>
+                        <h3>Liquor Licence</h3>
+                        <p>Licence No: <strong>36XXXXXXX</strong></p>
+                        <p>Packaged Liquor Licence issued under the <em>Liquor Control Reform Act 1998 (Vic)</em></p>
+                        <a href="https://www.vcglr.vic.gov.au" target="_blank" rel="noopener noreferrer" class="compliance-link">View VCGLR Register ↗</a>
+                    </div>
+                    <div class="compliance-card">
+                        <div class="compliance-icon">🔞</div>
+                        <h3>Age Verification</h3>
+                        <p>It is against the law to sell or supply alcohol to, or to obtain alcohol on behalf of, a person under the age of 18 years.</p>
+                        <p>Photo ID is required and will be checked at point of delivery or collection.</p>
+                    </div>
+                    <div class="compliance-card">
+                        <div class="compliance-icon">🍹</div>
+                        <h3>Drink Responsibly</h3>
+                        <p>We are committed to the responsible service of alcohol (RSA). Our staff are RSA-trained and will refuse service where required.</p>
+                        <a href="https://www.drinkwise.org.au" target="_blank" rel="noopener noreferrer" class="compliance-link">DrinkWise Australia ↗</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA -->
+            <section class="cta-section">
+                <div class="cta-card">
+                    <h2 class="cta-title">Ready to start saving?</h2>
+                    <p class="cta-sub">Join thousands of members who get exclusive pricing every time they shop.</p>
+                    <div class="cta-buttons">
+                        <button class="cta-primary" onclick={handleRegister}>Create Free Account</button>
+                        <button class="cta-secondary" onclick={handleShop}>Browse Products</button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</template>

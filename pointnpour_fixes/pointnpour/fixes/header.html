@@ -1,0 +1,72 @@
+<template>
+    <div class="header-container">
+        <div class="utility-bar">
+            <button class="utility-btn" onclick={handleShowMemberCard}>Membership Card</button>
+            <!-- FIX: Cart button now shows item count badge -->
+            <button class="utility-btn cart-utility-btn" onclick={handleViewCart}>
+                🛒 {cartLabel}
+                <template if:true={cartBadgeVisible}>
+                    <span class="cart-badge">{cartItemsCount}</span>
+                </template>
+            </button>
+        </div>
+
+        <div class="main-header">
+            <div class="brand">
+                <!--
+                    LOGO FIX INSTRUCTIONS:
+                    If the logo still shows broken after deploying:
+                    1. Go to Setup > Static Resources
+                    2. Confirm the Name is exactly: pointnpourlogo  (no spaces, exact case)
+                    3. Confirm Cache Control is: Public
+                    4. If it's a zip file, change logoUrl in header.js to: LOGO_RESOURCE + '/your-logo-filename.png'
+                -->
+                <img src={logoUrl}
+                     alt="Point &amp; Pour"
+                     class="logo-img"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"/>
+                <!-- Fallback text shown if image fails to load -->
+                <span style="display:none; font-size:28px; font-weight:900; color:white; letter-spacing:2px;">P&amp;P</span>
+                <span class="brand-text">POINT &amp; POUR</span>
+            </div>
+
+            <div class="search-box">
+                <!-- FIX: Added onkeyup={handleSearchKeyUp} so Enter key works -->
+                <input
+                    type="text"
+                    lwc:ref="searchInput"
+                    placeholder="Search products, brands or phrases..."
+                    class="search-input"
+                    onkeyup={handleSearchKeyUp}
+                />
+                <button class="search-btn" onclick={handleSearchSubmit}>🔍</button>
+            </div>
+
+            <div class="header-spacer"></div>
+        </div>
+
+        <nav class="nav-menu">
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <button class="nav-link" data-page="Beer__c" value="Beer" onclick={handleFamilyChange}>Beer</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-page="Wine__c" value="Wine" onclick={handleFamilyChange}>Wines</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-page="Spirit__c" value="Spirits" onclick={handleFamilyChange}>Spirits</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-page="RTD__c" value="RTD" onclick={handleFamilyChange}>RTD</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-page="Offers__c" value="Offers" onclick={handleFamilyChange}>Offers</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <template if:true={isModalOpen}>
+        <c-membership-modal onclose={closeModal}></c-membership-modal>
+    </template>
+</template>
